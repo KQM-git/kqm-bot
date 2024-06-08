@@ -162,16 +162,15 @@ export default class PointsCommand extends IModuleConfig('pointsSystem') impleme
         }
 
         if (subcommand == 'get') {
-            const allPoints = await discordBot.pointsManager.getPointsForUser(user)
-            const entries = Object.entries(allPoints)
+            const entries = await discordBot.pointsManager.getPointsForUser(user) ?? []
             const limit = 10
             const page = interaction.options.getNumber('page') ?? 1
             const offset = entries.length + ((page - 1) * limit) - limit
             await interaction.editReply({
                 embeds: [{
-                    title: 'Points History',
+                    title: 'Points History (descending)',
                     description: stripIndent`
-                    ${entries.length == 0 ? 'No Points' : ''}${entries.slice(offset, offset + limit).map(entry => `[${entry.amount}] <@${entry.assigner}> ${entry.reason}`).join('\n') ?? 'No History' }
+                    ${entries.length == 0 ? 'No History' : ''}${entries.slice(offset, offset + limit).map(entry => `[${entry.amount}] <@${entry.assigner}> ${entry.reason}`).join('\n')}
                     `,
                     footer: {
                         text: `Page ${page} of ${Math.ceil(entries.length/limit)} (${entries.length})`
