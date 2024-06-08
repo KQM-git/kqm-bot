@@ -162,7 +162,7 @@ export default class PointsCommand extends IModuleConfig('pointsSystem') impleme
         }
 
         if (subcommand == 'get') {
-            const entries = (await discordBot.pointsManager.getPointsForUser(user)) ?? []
+            const entries = (await discordBot.pointsManager.getPointsForUser(user)?.history) ?? []
             const limit = 10
             const page = interaction.options.getNumber('page') ?? 1
             const offset = entries.length + ((page - 1) * limit) - limit
