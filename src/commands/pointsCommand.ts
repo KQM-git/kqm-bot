@@ -21,6 +21,11 @@ export default class PointsCommand extends IModuleConfig('pointsSystem') impleme
                     .setDescription('The page')
                     .setRequired(false)
                 )
+                .addUserOption(builder => builder
+                    .setName('user')
+                    .setDescription('The user to get the points for')
+                    .setRequired(false)
+                )
             )
             .addSubcommand(builder => builder
                 .setName('get')
@@ -108,11 +113,12 @@ export default class PointsCommand extends IModuleConfig('pointsSystem') impleme
             return
         }
 
+        const user = interaction.options.getUser('user', false)
         if (subcommand == 'list') {
             const page = interaction.options.getNumber('page') ?? 1
             const limit = 50
             const offset = (page - 1) * limit
-            const allPoints = await discordBot.pointsManager.getAllPoints()
+            const allPoints = (user != undefined) ? await discordBot.pointsManager.getPointsForUser(user) : await discordBot.pointsManager.getAllPoints()
             const entries = Object.entries(allPoints)
             await interaction.editReply({
                 embeds: [{
@@ -128,7 +134,8 @@ export default class PointsCommand extends IModuleConfig('pointsSystem') impleme
             return
         }
 
-        const user = interaction.options.getUser('user', true)
+        if (!user) { throw Error('user is required') }
+        
         if (subcommand == 'clean') {
             await discordBot.pointsManager.removeAllPointsForUser(user, interaction.user)
             await interaction.editReply(`Cleaned <@${user.id}>`)
@@ -151,8 +158,8 @@ export default class PointsCommand extends IModuleConfig('pointsSystem') impleme
                 description: stripIndent`
                 Points for <@${user.id}>: ${points?.amount ?? 0}
 
-                **Point History**
-                ${points?.history.map(entry => `[${entry.amount}] <@${entry.assigner}> ${entry.reason}`).join('\n') ?? 'No History' }
+                **Point History (last 10 entries)**
+                ${points?.history.slice(-10).map(entry => `[${entry.amount}] <@${entry.assigner}> ${entry.reason}`).join('\n') ?? 'No History' }
                 `
             }]
         })
