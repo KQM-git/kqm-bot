@@ -21,11 +21,6 @@ export default class PointsCommand extends IModuleConfig('pointsSystem') impleme
                     .setDescription('The page')
                     .setRequired(false)
                 )
-                .addUserOption(builder => builder
-                    .setName('user')
-                    .setDescription('The user to get the points for')
-                    .setRequired(false)
-                )
             )
             .addSubcommand(builder => builder
                 .setName('get')
@@ -34,6 +29,11 @@ export default class PointsCommand extends IModuleConfig('pointsSystem') impleme
                     .setName('user')
                     .setDescription('The user to get the points for')
                     .setRequired(true)
+                )
+                .addNumberOption(builder => builder
+                    .setName('page')
+                    .setDescription('The page')
+                    .setRequired(false)
                 )
             )
             .addSubcommand(builder => builder
@@ -113,12 +113,11 @@ export default class PointsCommand extends IModuleConfig('pointsSystem') impleme
             return
         }
 
-        const user = interaction.options.getUser('user', false)
         if (subcommand == 'list') {
             const page = interaction.options.getNumber('page') ?? 1
             const limit = 50
             const offset = (page - 1) * limit
-            const allPoints = (user != undefined) ? await discordBot.pointsManager.getPointsForUser(user) : await discordBot.pointsManager.getAllPoints()
+            const allPoints = await discordBot.pointsManager.getAllPoints()
             const entries = Object.entries(allPoints)
             await interaction.editReply({
                 embeds: [{
@@ -127,14 +126,14 @@ export default class PointsCommand extends IModuleConfig('pointsSystem') impleme
                     ${entries.length == 0 ? 'No Points' : ''}${entries.slice(offset, offset + limit).map(([userId, points]) => `<@${userId}>: ${points?.amount ?? 0}`).join('\n')}
                     `,
                     footer: {
-                        text: `Page ${page} of ${Math.ceil(Object.keys(allPoints).length/limit)} (${entries.length})`
+                        text: `Page ${page} of ${Math.ceil(entries.length/limit)} (${entries.length})`
                     }
                 }]
             })
             return
         }
 
-        if (!user) { throw Error('user is required') }
+        const user = interaction.options.getUser('user', true)
         
         if (subcommand == 'clean') {
             await discordBot.pointsManager.removeAllPointsForUser(user, interaction.user)
@@ -143,26 +142,43 @@ export default class PointsCommand extends IModuleConfig('pointsSystem') impleme
         }
 
         if (subcommand == 'add') {
+            const points = await discordBot.pointsManager.getPointsForUser(user)
             await discordBot.pointsManager.addPointsToUser(
                 user,
                 interaction.options.getNumber('points', true),
                 interaction.options.getString('reason', true),
                 interaction.user,
             )
+            await interaction.editReply({
+                embeds: [{
+                    description: stripIndent`
+                    Points for <@${user.id}>: ${points?.amount ?? 0}
+    
+                    **Point History (last 10 entries, descending)**
+                    ${points?.history.slice(-10).reverse().map(entry => `[${entry.amount}] <@${entry.assigner}> ${entry.reason}`).join('\n') ?? 'No History' }
+                    `
+                }]
+            })
         }
 
-        const points = await discordBot.pointsManager.getPointsForUser(user)
-
-        await interaction.editReply({
-            embeds: [{
-                description: stripIndent`
-                Points for <@${user.id}>: ${points?.amount ?? 0}
-
-                **Point History (last 10 entries)**
-                ${points?.history.slice(-10).map(entry => `[${entry.amount}] <@${entry.assigner}> ${entry.reason}`).join('\n') ?? 'No History' }
-                `
-            }]
-        })
+        if (subcommand == 'get') {
+            const allPoints = await discordBot.pointsManager.getPointsForUser(user)
+            const entries = Object.entries(allPoints)
+            const limit = 10
+            const page = interaction.options.getNumber('page') ?? 1
+            const offset = entries.length + ((page - 1) * limit) - limit
+            await interaction.editReply({
+                embeds: [{
+                    title: 'Points History',
+                    description: stripIndent`
+                    ${entries.length == 0 ? 'No Points' : ''}${entries.slice(offset, offset + limit).map(entry => `[${entry.amount}] <@${entry.assigner}> ${entry.reason}`).join('\n') ?? 'No History' }
+                    `,
+                    footer: {
+                        text: `Page ${page} of ${Math.ceil(entries.length/limit)} (${entries.length})`
+                    }
+                }]
+            })
+        }
     }
 
 }
