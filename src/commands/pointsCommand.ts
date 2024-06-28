@@ -162,6 +162,7 @@ export default class PointsCommand extends IModuleConfig('pointsSystem') impleme
         }
 
         if (subcommand == 'get') {
+            const points = await discordBot.pointsManager.getPointsForUser(user)
             const entries = (await discordBot.pointsManager.getPointsForUser(user))?.history ?? []
             const limit = 10
             const page = interaction.options.getNumber('page') ?? 1
@@ -170,6 +171,8 @@ export default class PointsCommand extends IModuleConfig('pointsSystem') impleme
                 embeds: [{
                     title: 'Points History (descending)',
                     description: stripIndent`
+                    Points for <@${user.id}>: ${points?.amount ?? 0}
+
                     ${entries.length == 0 ? 'No History' : ''}${entries.slice(offset, offset + limit).map(entry => `[${entry.amount}] <@${entry.assigner}> ${entry.reason}`).join('\n')}
                     `,
                     footer: {
