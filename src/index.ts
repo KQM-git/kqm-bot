@@ -361,7 +361,7 @@ class DiscordBotHandler {
             console.log(`Registering Command: ${command.name}, AC ${command.autocomplete ?? false}`)
         }
 
-        await this.restClient.put(Routes.applicationCommands(Constants.DISCORD_CLIENT_ID, Constants.DISCORD_GUILD_ID), { body: Object.values(hashSet) })
+        await this.restClient.put(Routes.applicationGuildCommands(Constants.DISCORD_CLIENT_ID, Constants.DISCORD_GUILD_ID), { body: Object.values(hashSet) })
     }
 
     async downloadAndExtractLiveCommandRepo() {
