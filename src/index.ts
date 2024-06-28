@@ -45,22 +45,22 @@ class DiscordBotHandler {
     })
     restClient = new REST({ version: '9' }).setToken(Constants.DISCORD_BOT_TOKEN)
 
-    // get guild(): Promise<Guild> {
-    //     return (async () => {
-    //         let guild: Guild | undefined
+    get guild(): Promise<Guild> {
+        return (async () => {
+            let guild: Guild | undefined
 
-    //         if (this.client.guilds.cache.has(Constants.DISCORD_GUILD_ID))
-    //             guild = this.client.guilds.cache.get(Constants.DISCORD_GUILD_ID)
-    //         else
-    //             guild = await this.client.guilds.fetch(Constants.DISCORD_GUILD_ID)
+            if (this.client.guilds.cache.has(Constants.DISCORD_GUILD_ID))
+                guild = this.client.guilds.cache.get(Constants.DISCORD_GUILD_ID)
+            else
+                guild = await this.client.guilds.fetch(Constants.DISCORD_GUILD_ID)
             
-    //         if (!guild) {
-    //             throw new Error(`Unable to resolve guild ${Constants.DISCORD_GUILD_ID}`)
-    //         }
+            if (!guild) {
+                throw new Error(`Unable to resolve guild ${Constants.DISCORD_GUILD_ID}`)
+            }
 
-    //         return guild
-    //     })()
-    // }
+            return guild
+        })()
+    }
 
 
     localCommandManager = new LocalCommandManager()
@@ -361,7 +361,7 @@ class DiscordBotHandler {
             console.log(`Registering Command: ${command.name}, AC ${command.autocomplete ?? false}`)
         }
 
-        await this.restClient.put(Routes.applicationCommands(Constants.DISCORD_CLIENT_ID), { body: Object.values(hashSet) })    
+        await this.restClient.put(Routes.applicationCommands(Constants.DISCORD_CLIENT_ID), { body: Object.values(hashSet) })
     }
 
     async downloadAndExtractLiveCommandRepo() {
